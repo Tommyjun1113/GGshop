@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navigation_home">
+
+
+    <fragment
+        android:id="@+id/navigation_home"
+        android:name="com.example.shopping.ui.home.HomeFragment"
+        android:label="@string/title_home"
+        tools:layout="@layout/fragment_home">
+
+        <action
+            android:id="@+id/action_home_to_productDetail"
+            app:destination="@id/productDetailFragment" />
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/productDetailFragment"
+        android:name="com.example.shopping.ui.home.ProductFragment"
+        android:label="商品詳細"
+        tools:layout="@layout/fragment_product">
+
+        <argument
+            android:name="product"
+            app:argType="com.example.shopping.ui.home.Product" />
+
+        <action
+            android:id="@+id/action_productDetail_to_payment"
+            app:destination="@id/paymentFragment" />
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/navigation_cart"
+        android:name="com.example.shopping.ui.cart.CartFragment"
+        android:label="@string/title_cart"
+        tools:layout="@layout/fragment_cart">
+
+        <action
+            android:id="@+id/action_cart_to_productDetail"
+            app:destination="@id/productDetailFragment" />
+
+        <action
+            android:id="@+id/action_cart_to_payment"
+            app:destination="@id/paymentFragment" />
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/paymentFragment"
+        android:name="com.example.shopping.ui.payment.PaymentFragment"
+        android:label="付款方式"
+        tools:layout="@layout/fragment_payment">
+
+        <argument
+            android:name="order"
+            app:argType="com.example.shopping.ui.user.order.OrderModel" />
+
+        <action
+            android:id="@+id/action_payment_to_paySuccess"
+            app:destination="@id/paySuccessFragment" />
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/paySuccessFragment"
+        android:name="com.example.shopping.ui.payment.PaymentSuccessFragment"
+        android:label="付款成功"
+        tools:layout="@layout/fragment_payment_success">
+
+        <argument
+            android:name="orderId"
+            app:argType="string" />
+
+        <action
+            android:id="@+id/action_paySuccess_to_orderDetail"
+            app:destination="@id/orderDetailFragment" />
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/orderDetailFragment"
+        android:name="com.example.shopping.ui.user.order.OrderDetailFragment"
+        android:label="訂單明細"
+        tools:layout="@layout/fragment_order_detail">
+
+        <argument
+            android:name="orderId"
+            app:argType="string" />
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/navigation_notifications"
+        android:name="com.example.shopping.ui.notifications.NotificationsFragment"
+        android:label="@string/title_notification"
+        tools:layout="@layout/fragment_notifications">
+
+        <action
+            android:id="@+id/action_notifications_to_couponDetail"
+            app:destination="@id/couponDetailFragment"/>
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/couponDetailFragment"
+        android:name="com.example.shopping.ui.notifications.CouponDetailFragment">
+
+        <argument
+            android:name="coupon"
+            app:argType="com.example.shopping.ui.notifications.NotificationItem"/>
+
+        <action
+            android:id="@+id/action_couponDetail_to_cart"
+            app:destination="@id/navigation_cart"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_user"
+        android:name="com.example.shopping.ui.user.UserFragment"
+        android:label="@string/title_user"
+        tools:layout="@layout/fragment_user">
+
+        <action
+            android:id="@+id/action_userFragment_to_account"
+            app:destination="@id/account" />
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/account"
+        android:name="com.example.shopping.ui.user.AccountFragment"
+        android:label="帳戶設定"
+        tools:layout="@layout/fragment_account" />
+
+
+    <fragment
+        android:id="@+id/setPasswordFragment"
+        android:name="com.example.shopping.ui.login.SetPasswordFragment"
+        android:label="設定登入密碼"
+        tools:layout="@layout/fragment_set_password" />
+
+
+    <fragment
+        android:id="@+id/purchaseHistoryFragment"
+        android:name="com.example.shopping.ui.user.Purchase"
+        android:label="購買紀錄"
+        tools:layout="@layout/fragment_purchase">
+
+        <action
+            android:id="@+id/action_purchase_to_orderDetail"
+            app:destination="@id/orderDetailFragment" />
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/favoriteFragment"
+        android:name="com.example.shopping.ui.user.FavorFragment"
+        android:label="我的最愛"
+        tools:layout="@layout/fragment_favor">
+        <action
+            android:id="@+id/action_favor_to_productDetail"
+            app:destination="@+id/productDetailFragment"/>
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/contactUsFragment"
+        android:name="com.example.shopping.ui.user.ContactFragment"
+        android:label="聯絡我們"
+        tools:layout="@layout/fragment_contact" />
+
+
+    <fragment
+        android:id="@+id/deleteAccountFragment"
+        android:name="com.example.shopping.ui.user.DeleteAcFragment"
+        android:label="刪除會員資格"
+        tools:layout="@layout/fragment_delete_ac" />
+
+</navigation>

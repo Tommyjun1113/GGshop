@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/searchBarRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="@drawable/bg_round"
+    android:padding="8dp">
+
+    <ImageView
+        android:src="@drawable/img_2"
+        android:layout_width="24dp"
+        android:layout_height="24dp"/>
+
+    <EditText
+        android:id="@+id/searchInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="搜尋商品"
+        android:background="@android:color/transparent"/>
+
+</LinearLayout>

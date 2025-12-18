@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="刪除會員資格"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="24dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="請勾選以下項目，以確認您了解刪除帳戶後會發生的情況："
+            android:textSize="16sp"
+            android:layout_marginBottom="16dp"/>
+
+        <CheckBox
+            android:id="@+id/check1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="所有購買紀錄將會永久刪除"
+            android:textSize="16sp"/>
+
+        <CheckBox
+            android:id="@+id/check2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="收藏列表也會一併刪除"
+            android:textSize="16sp"/>
+
+        <CheckBox
+            android:id="@+id/check3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="您將無法恢復此帳戶"
+            android:textSize="16sp"/>
+
+        <CheckBox
+            android:id="@+id/checkConfirm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="我確定要刪除帳戶"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp"
+            android:textSize="17sp"/>
+
+        <Button
+            android:id="@+id/btnDeleteAccount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="刪除帳戶"
+            android:backgroundTint="@color/black"
+            android:textColor="#FFFFFF"
+            android:enabled="false"
+            android:layout_marginTop="24dp"
+            android:padding="12dp"/>
+
+    </LinearLayout>
+</ScrollView>

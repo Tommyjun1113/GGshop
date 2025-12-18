@@ -1,3 +1,23 @@
+### ===== Android =====
+*.iml
+.gradle/
+local.properties
+.idea/
+.DS_Store
+/build
+**/build/
+
+### ===== Kotlin / Java =====
+out/
+captures/
+
+### ===== Firebase / Node =====
+functions/node_modules/
 node_modules/
 .env
-*.local
+
+### ===== Logs =====
+*.log
+
+### ===== OS =====
+Thumbs.db

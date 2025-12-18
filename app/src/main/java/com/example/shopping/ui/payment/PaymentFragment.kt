@@ -9,6 +9,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.wear.compose.material.Vignette
+import com.example.shopping.R
 import com.example.shopping.databinding.FragmentPaymentBinding
 import com.example.shopping.ui.main.MainActivity
 import com.example.shopping.ui.payment.adapter.PaymentItemAdapter
@@ -50,6 +52,7 @@ class PaymentFragment : Fragment() {
         showOrderPreview()
         setupCardInput()
         setupPaymentListener()
+
     }
 
     private fun showOrderPreview() {
@@ -87,24 +90,71 @@ class PaymentFragment : Fragment() {
     }
 
     private fun setupPaymentListener() {
+        binding.layoutCard.visibility = View.GONE
+        binding.layoutCash.visibility = View.GONE
+
         binding.radioGroupPayment.setOnCheckedChangeListener { _, checkedId ->
-            binding.layoutCard.visibility =
-                if (checkedId == binding.radioCreditCard.id) View.VISIBLE else View.GONE
+            when (checkedId) {
+                R.id.radioCreditCard -> {
+                    binding.layoutCard.visibility = View.VISIBLE
+                    binding.layoutCash.visibility = View.GONE
+                }
+
+                R.id.radioCash -> {
+                    binding.layoutCard.visibility = View.GONE
+                    binding.layoutCash.visibility = View.VISIBLE
+                }
+
+                R.id.radioLinePay -> {
+                    binding.layoutCard.visibility = View.GONE
+                    binding.layoutCash.visibility = View.GONE
+                }
+            }
         }
 
         binding.btnConfirmPay.setOnClickListener {
             binding.btnConfirmPay.isEnabled = false
 
-            if (binding.radioCreditCard.isChecked &&
-                binding.edtCardNumber.text.isNullOrBlank()
-            ) {
-                Toast.makeText(requireContext(), "請輸入信用卡號", Toast.LENGTH_SHORT).show()
+            val checkedId = binding.radioGroupPayment.checkedRadioButtonId
+            if (checkedId == -1) {
+                Toast.makeText(requireContext(), "請選擇付款方式", Toast.LENGTH_SHORT).show()
                 binding.btnConfirmPay.isEnabled = true
                 return@setOnClickListener
             }
+            when (checkedId) {
+                R.id.radioCreditCard -> {
+
+                    if (binding.edtCardNumber.text.isNullOrBlank()
+                        || binding.edtCardTime.text.isNullOrBlank()
+                        || binding.edtCardCVV.text.isNullOrBlank()
+                    ) {
+                        Toast.makeText(requireContext(), "請完整輸入信用卡資訊", Toast.LENGTH_SHORT).show()
+                        binding.btnConfirmPay.isEnabled = true
+                        return@setOnClickListener
+                    }
+                }
+
+                R.id.radioCash -> {
+
+                    if (binding.edtReceiverName.text.isNullOrBlank()
+                        || binding.edtReceiverPhone.text.isNullOrBlank()
+                        || binding.edtReceiverAddress.text.isNullOrBlank()
+                    ) {
+                        Toast.makeText(requireContext(), "請完整輸入收件資訊", Toast.LENGTH_SHORT).show()
+                        binding.btnConfirmPay.isEnabled = true
+                        return@setOnClickListener
+                    }
+                }
+
+                R.id.radioLinePay -> {
+
+                }
+            }
+
             createOrder()
         }
     }
+
 
     private fun createOrder() {
         val userId = UserSession.documentId

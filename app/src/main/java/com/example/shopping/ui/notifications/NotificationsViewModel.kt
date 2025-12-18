@@ -40,22 +40,28 @@ class NotificationsViewModel : ViewModel() {
                         return@mapNotNull null
                     }
 
-                    val status = when {
-                        used -> CouponStatus.USED
-                        expireDate.isBefore(today) -> CouponStatus.EXPIRED
-                        else -> CouponStatus.AVAILABLE
+                    val (status, message) = when {
+                        used -> CouponStatus.USED to "已使用"
+                        expireDate.isBefore(today) -> CouponStatus.EXPIRED to "已過期"
+                        else -> CouponStatus.AVAILABLE to "立即使用"
                     }
 
-                    NotificationItem(
+                    val coupon = Coupon(
                         id = doc.id,
                         title = doc.getString("title") ?: "",
-                        message = "立即使用",
-                        expireDate = expireStr,
-                        type = CouponType.valueOf(doc.getString("type")!!),
+                        type = CouponType.valueOf(doc.getString("type") ?: "AMOUNT"),
                         value = (doc.getLong("value") ?: 0).toInt(),
                         minSpend = (doc.getLong("minSpend") ?: 0).toInt(),
+                        expireDate = expireStr,
+                        used = used
+                    )
+
+                    NotificationItem(
+                        coupon = coupon,
+                        message = message,
                         status = status
                     )
+
                 }
 
                 _notifications.value = list

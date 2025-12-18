@@ -6,12 +6,8 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class NotificationItem(
-    val id: String,
-    val title: String,
+    val coupon: Coupon,
     val message: String,
-    val expireDate: String,
-    val type: CouponType,
-    val value: Int,
-    val minSpend: Int = 0,
     val status: CouponStatus
 ) : Parcelable
+

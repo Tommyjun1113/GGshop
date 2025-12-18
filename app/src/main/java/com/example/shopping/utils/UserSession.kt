@@ -1,12 +1,13 @@
 package com.example.shopping.utils
 
-import com.example.shopping.ui.notifications.NotificationItem
+import com.example.shopping.ui.notifications.Coupon
+
 
 
 object UserSession {
         var isLogin: Boolean = false
         var email :String =""
         var documentId :String=""
-        var selectedCoupon : NotificationItem? = null
+        var selectedCoupon : Coupon? = null
 
     }

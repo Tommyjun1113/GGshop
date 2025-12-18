@@ -345,10 +345,10 @@ class LoginActivity : AppCompatActivity() {
                 Pair(
                     "SAVE300",
                     mapOf(
-                        "title" to "滿 2000 折 300",
+                        "title" to "滿 3000 折 300",
                         "type" to "AMOUNT",
                         "value" to 300,
-                        "minSpend" to 2000,
+                        "minSpend" to 3000,
                         "expireDate" to "2026/01/31",
                         "used" to false,
                         "createdAt" to Timestamp.now()

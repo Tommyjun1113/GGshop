@@ -20,7 +20,7 @@ class CouponDetailFragment : Fragment() {
     private var _binding: FragmentCouponDetailBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var coupon: NotificationItem
+    private lateinit var coupon: Coupon
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

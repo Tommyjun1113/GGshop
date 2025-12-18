@@ -3,9 +3,13 @@ package com.example.shopping.ui.cart
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.shopping.ui.notifications.Coupon
 import com.example.shopping.ui.notifications.CouponType
 import com.example.shopping.utils.UserSession
 import com.google.firebase.firestore.FirebaseFirestore
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import kotlin.collections.filter
 
 class CartViewModel : ViewModel() {
 
@@ -15,6 +19,8 @@ class CartViewModel : ViewModel() {
     val cartItems: LiveData<List<CartItem>> = _cartItems
     private val _discount = MutableLiveData(0)
     val discount: LiveData<Int> = _discount
+
+    private var userCoupons: List<Coupon> = emptyList()
 
     private val _total = MutableLiveData<Int>(0)
     val total: LiveData<Int> = _total
@@ -27,27 +33,55 @@ class CartViewModel : ViewModel() {
             return
         }
 
+        loadUserCoupons {
+            db.collection("users")
+                .document(UserSession.documentId)
+                .collection("cart")
+                .get()
+                .addOnSuccessListener { result ->
+                    val list = result.map { doc ->
+                        CartItem(
+                            id = doc.id,
+                            productId = doc.getString("productId") ?: "",
+                            productName = doc.getString("productName") ?: "",
+                            price = (doc.getLong("price") ?: 0).toInt(),
+                            size = doc.getString("size") ?: "",
+                            quantity = (doc.getLong("quantity") ?: 1).toInt(),
+                            imageResId = (doc.getLong("imageResId") ?: 0L).toInt(),
+                            isSelected = selectedIds.contains(doc.id)
+                        )
+                    }
+                    _cartItems.value = list
+                    calculateTotal(list)
+                }
+        }
+    }
+    private fun loadUserCoupons(onDone: () -> Unit) {
         db.collection("users")
             .document(UserSession.documentId)
-            .collection("cart")
+            .collection("coupons")
             .get()
             .addOnSuccessListener { result ->
-                val list = result.map { doc ->
-                    CartItem(
-                        id = doc.id,
-                        productId = doc.getString("productId") ?: "",
-                        productName = doc.getString("productName") ?: "",
-                        price = (doc.getLong("price") ?: 0).toInt(),
-                        size = doc.getString("size") ?: "",
-                        quantity = (doc.getLong("quantity") ?: 1).toInt(),
-                        imageResId = (doc.getLong("imageResId") ?: 0L).toInt(),
-                        isSelected = selectedIds.contains(doc.id)
-                    )
+                userCoupons = result.mapNotNull { doc ->
+                    try {
+                        Coupon(
+                            id = doc.id,
+                            title = doc.getString("title") ?: "",
+                            type = CouponType.valueOf(doc.getString("type") ?: "AMOUNT"),
+                            value = (doc.getLong("value") ?: 0).toInt(),
+                            minSpend = (doc.getLong("minSpend") ?: 0).toInt(),
+                            expireDate = doc.getString("expireDate") ?: "",
+                            used = doc.getBoolean("used") ?: false
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
                 }
-                _cartItems.value = list
-                calculateTotal(list)
+                onDone()
             }
     }
+
+
 
     fun updateQty(item: CartItem, newQty: Int) {
         db.collection("users")
@@ -61,20 +95,19 @@ class CartViewModel : ViewModel() {
     }
 
     fun updateSelection(item: CartItem, checked: Boolean) {
-        if (checked) selectedIds.add((item.id)) else selectedIds.remove(item.id)
-
+        if (checked) selectedIds.add(item.id) else selectedIds.remove(item.id)
         updateItem(item.id) { it.copy(isSelected = checked) }
     }
 
     fun toggleSelectAll(checked: Boolean) {
-        val list = _cartItems.value
-            ?.map { if (checked) selectedIds.add(it.id) else selectedIds.clear()
-            it.copy(isSelected = checked)
-            }
-            ?:return
+        val list = _cartItems.value ?: return
 
-        _cartItems.value = list
-        calculateTotal(list)
+        selectedIds.clear()
+        if (checked) list.forEach { selectedIds.add(it.id) }
+
+        val newList = list.map { it.copy(isSelected = checked) }
+        _cartItems.value = newList
+        calculateTotal(newList)
     }
 
     fun deleteItem(item: CartItem) {
@@ -84,12 +117,10 @@ class CartViewModel : ViewModel() {
             .document(item.id)
             .delete()
             .addOnSuccessListener {
-                val list = _cartItems.value
-                    ?.filter { it.id != item.id }
-                    ?: emptyList()
-
-                _cartItems.value = list
-                calculateTotal(list )
+                val newList = _cartItems.value?.filter { it.id != item.id } ?: emptyList()
+                selectedIds.remove(item.id)
+                _cartItems.value = newList
+                calculateTotal(newList)
             }
     }
 
@@ -109,38 +140,70 @@ class CartViewModel : ViewModel() {
 
         batch.commit().addOnSuccessListener {
             val newList = list.filterNot { it.isSelected }
+            selectedIds.clear()
             _cartItems.value = newList
             calculateTotal(newList)
         }
     }
-    private fun updateItem(
-        id: String,
-        transform: (CartItem) -> CartItem
-    ) {
-        val list = _cartItems.value ?: return
 
-        val newList = list.map {
-            if (it.id == id) transform(it) else it
-        }
+    private fun updateItem(id: String, transform: (CartItem) -> CartItem) {
+        val list = _cartItems.value ?: return
+        val newList = list.map { if (it.id == id) transform(it) else it }
         _cartItems.value = newList
         calculateTotal(newList)
     }
+
+
 
     private fun calculateTotal(list: List<CartItem>) {
         val selectedItems = list.filter { it.isSelected }
         val originalTotal = selectedItems.sumOf { it.subtotal }
 
-        val coupon = UserSession.selectedCoupon
-        var discountAmount =0
+        if (originalTotal == 0) {
+            clearPriceOnly()
+            return
+        }
 
-        if (coupon != null && originalTotal >= coupon.minSpend){
-            discountAmount = when(coupon.type){
-                CouponType.AMOUNT -> coupon.value
-                CouponType.PERCENT -> (originalTotal * coupon.value / 100)
+        autoApplyBestCoupon(userCoupons, originalTotal)
+
+        var discountAmount = 0
+        UserSession.selectedCoupon?.let { coupon ->
+            if (originalTotal >= coupon.minSpend) {
+                discountAmount = when (coupon.type) {
+                    CouponType.AMOUNT -> coupon.value
+                    CouponType.PERCENT -> originalTotal * coupon.value / 100
+                }
             }
         }
 
         _discount.value = discountAmount
         _total.value = originalTotal - discountAmount
+    }
+
+    private fun autoApplyBestCoupon(coupons: List<Coupon>, total: Int) {
+        val today = LocalDate.now()
+        val formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
+
+        val bestCoupon = coupons
+            .filter { !it.used }
+            .filter {
+                val expire = LocalDate.parse(it.expireDate, formatter)
+                !expire.isBefore(today)
+            }
+            .filter { total >= it.minSpend }
+            .maxByOrNull { coupon ->
+                when (coupon.type) {
+                    CouponType.AMOUNT -> coupon.value
+                    CouponType.PERCENT -> total * coupon.value / 100
+                }
+            }
+
+        UserSession.selectedCoupon = bestCoupon
+    }
+
+    private fun clearPriceOnly() {
+        _discount.value = 0
+        _total.value = 0
+        UserSession.selectedCoupon = null
     }
 }

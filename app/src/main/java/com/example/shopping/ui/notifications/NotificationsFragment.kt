@@ -66,11 +66,11 @@ class NotificationsFragment : Fragment() {
         adapter = NotificationAdapter(emptyList()){ item ->
             findNavController().navigate(
                 NotificationsFragmentDirections
-                    .actionNotificationsToCouponDetail(item)
+                    .actionNotificationsToCouponDetail(item.coupon)
             )
             Toast.makeText(
                 requireContext(),
-                "點擊優惠 : ${item.title}",
+                "點擊優惠 : ${item.coupon.title}",
                 Toast.LENGTH_SHORT
             ).show()
         }

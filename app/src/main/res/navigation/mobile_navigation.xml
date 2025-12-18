@@ -47,6 +47,12 @@
         <action
             android:id="@+id/action_cart_to_payment"
             app:destination="@id/paymentFragment" />
+        <action
+            android:id="@+id/action_cart_to_notifications"
+            app:destination="@id/navigation_notifications" />
+        <action
+            android:id="@+id/action_cart_to_home"
+            app:destination="@id/navigation_home" />
     </fragment>
 
 

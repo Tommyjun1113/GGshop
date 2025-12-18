@@ -56,7 +56,8 @@ class CouponDetailFragment : Fragment() {
 
     private fun goToCart() {
         UserSession.selectedCoupon = coupon
-
+        UserSession.isManualCoupon = true
+        UserSession.hasAutoAppliedCoupon = true
         findNavController().navigate(
             CouponDetailFragmentDirections
                 .actionCouponDetailToCart()

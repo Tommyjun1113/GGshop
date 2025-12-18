@@ -74,9 +74,8 @@ class UserFragment : Fragment() {
 
         logout = root.findViewById(R.id.logout)
         logout.setOnClickListener {
-            UserSession.isLogin = false
-            UserSession.email = ""
-            UserSession.documentId = ""
+            FirebaseAuth.getInstance().signOut()
+            UserSession.clear()
             val intent = Intent(requireContext(), MainActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)

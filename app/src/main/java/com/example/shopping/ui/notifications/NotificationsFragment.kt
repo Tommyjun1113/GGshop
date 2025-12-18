@@ -64,6 +64,11 @@ class NotificationsFragment : Fragment() {
     }
     private fun setupRecyclerView() {
         adapter = NotificationAdapter(emptyList()){ item ->
+            UserSession.selectedCoupon = item.coupon
+            UserSession.isManualCoupon = true
+            UserSession.hasAutoAppliedCoupon = true
+            UserSession.isCouponEnabled = false
+
             findNavController().navigate(
                 NotificationsFragmentDirections
                     .actionNotificationsToCouponDetail(item.coupon)
@@ -80,11 +85,7 @@ class NotificationsFragment : Fragment() {
     }
     private fun observeViewModel() {
         viewModel.notifications.observe(viewLifecycleOwner) { list ->
-
-
             allCoupons = list
-
-
             showCoupons(CouponStatus.AVAILABLE)
         }
     }

@@ -1,6 +1,7 @@
 package com.example.shopping.ui.cart
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -44,7 +45,9 @@ class CartFragment : Fragment() {
         setupRecyclerView()
         observeViewModel()
 
+
         binding.btnCheckout.setOnClickListener { checkout() }
+
         binding.btnDeleteSelected.setOnClickListener {
             viewModel.deleteSelectedItems()
         }
@@ -55,6 +58,21 @@ class CartFragment : Fragment() {
             } else {
                 (requireActivity() as MainActivity).navigateToHome()
             }
+        }
+
+        binding.layoutCoupon.setOnClickListener {
+
+            val selectedIds = viewModel.cartItems.value
+                ?.filter { it.isSelected }
+                ?.map { it.id }
+                ?: emptyList()
+
+            UserSession.preservedSelectedCartIds.clear()
+            UserSession.preservedSelectedCartIds.addAll(selectedIds)
+
+            findNavController().navigate(
+                CartFragmentDirections.actionCartToNotifications()
+            )
         }
 
         binding.checkAll.setOnCheckedChangeListener { _, checked ->
@@ -92,13 +110,129 @@ class CartFragment : Fragment() {
         binding.recyclerCart.adapter = adapter
     }
 
+    private fun updateCouponUI() {
+        val coupon = UserSession.selectedCoupon
+        val list = viewModel.cartItems.value ?: emptyList()
+
+        val hasSelected = list.any { it.isSelected }
+        val total = list.filter { it.isSelected }.sumOf { it.subtotal }
+
+        val canUse = coupon != null && total >= coupon.minSpend
+        val enabled = UserSession.isCouponEnabled
+
+
+        binding.switchUseCoupon.setOnCheckedChangeListener(null)
+
+
+        binding.switchUseCoupon.isEnabled = hasSelected
+        binding.switchUseCoupon.isChecked = enabled && canUse
+
+        binding.switchUseCoupon.setOnCheckedChangeListener { _, isChecked ->
+
+            if (isChecked && !canUse) {
+                binding.switchUseCoupon.isChecked = false
+                Toast.makeText(
+                    requireContext(),
+                    "尚未達優惠使用門檻",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnCheckedChangeListener
+            }
+
+            UserSession.isCouponEnabled = isChecked
+
+            if (!isChecked) {
+                UserSession.hasAutoAppliedCoupon = true
+            }
+            viewModel.calculateTotal(list)
+        }
+
+
+        when {
+            coupon == null || !hasSelected -> {
+                binding.txtCouponHint.visibility = View.GONE
+            }
+
+            !canUse -> {
+                val diff = coupon.minSpend - total
+                binding.txtCouponHint.text = "還差 NT$$diff 可使用此優惠（點我補差）"
+                binding.txtCouponHint.setTextColor(Color.parseColor("#F2994A"))
+                binding.txtCouponHint.visibility = View.VISIBLE
+
+
+                UserSession.needMoreAmount = diff
+                binding.txtCouponHint.setOnClickListener {
+                    val selectedIds = viewModel.cartItems.value
+                        ?.filter { it.isSelected }
+                        ?.map { it.id }
+                        ?: emptyList()
+
+                    UserSession.preservedSelectedCartIds.clear()
+                    UserSession.preservedSelectedCartIds.addAll(selectedIds)
+
+                    UserSession.isRecommendForCoupon = true
+
+                    findNavController().navigate(
+                        CartFragmentDirections.actionCartToHome()
+                    )
+                }
+
+            }
+
+            else -> {
+                binding.txtCouponHint.text = "✓ 已符合使用條件"
+                binding.txtCouponHint.setTextColor(Color.parseColor("#2E7D32"))
+                binding.txtCouponHint.visibility = View.VISIBLE
+                binding.txtCouponHint.setOnClickListener(null)
+                UserSession.needMoreAmount = 0
+            }
+        }
+
+
+        binding.txtCoupon.text = when {
+            !hasSelected ->
+                "🎟 選擇優惠券"
+
+            coupon == null ->
+                "🎟 選擇優惠券"
+
+            !canUse ->
+                "🎟 已選優惠：${coupon.title}（未達門檻）"
+
+            enabled ->
+                "🎟 已套用優惠：${coupon.title}"
+
+            else ->
+                "🎟 已選優惠：${coupon.title}"
+        }
+
+        binding.txtCoupon.alpha = if (hasSelected) 1f else 0.6f
+    }
+
+
+
+
     private fun observeViewModel() {
         viewModel.cartItems.observe(viewLifecycleOwner) { list ->
+
+            UserSession.preservedSelectedCartIds.forEach { id ->
+                viewModel.selectItemById(id)
+            }
+
+            UserSession.pendingSelectCartId?.let { newId ->
+                viewModel.selectItemById(newId)
+                UserSession.pendingSelectCartId = null
+            }
+
+            UserSession.preservedSelectedCartIds.clear()
+
             adapter.updateList(list)
             updateCartUI(list)
+            updateCouponUI()
         }
         viewModel.discount.observe(viewLifecycleOwner) { discount ->
-            if(discount > 0){
+            updateCouponUI()
+            if(discount > 0 && UserSession.isCouponEnabled){
                 binding.txtDiscount.visibility = View.VISIBLE
                 binding.txtDiscount.text = "已套用優惠：-NT$$discount"
             } else {
@@ -119,6 +253,9 @@ class CartFragment : Fragment() {
 
         binding.recyclerCart.visibility =
             if (showEmpty) View.GONE else View.VISIBLE
+
+        binding.layoutCoupon.visibility =
+            if (!showEmpty && hasSelected) View.VISIBLE else View.GONE
 
         binding.layoutBottomBar.visibility =
             if (showEmpty) View.GONE else View.VISIBLE
@@ -172,6 +309,7 @@ class CartFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        updateCouponUI()
         val main =(requireActivity() as MainActivity)
         main.showSimpleTitle("購物車")
         main.setFavoriteMenuVisible(true)

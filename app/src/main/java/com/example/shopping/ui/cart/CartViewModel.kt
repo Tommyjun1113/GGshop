@@ -25,6 +25,7 @@ class CartViewModel : ViewModel() {
     private val _total = MutableLiveData<Int>(0)
     val total: LiveData<Int> = _total
 
+    private var pendingSelectId: String? = null
     fun loadCart() {
         if (!UserSession.isLogin) {
             _cartItems.value = emptyList()
@@ -50,6 +51,14 @@ class CartViewModel : ViewModel() {
                             imageResId = (doc.getLong("imageResId") ?: 0L).toInt(),
                             isSelected = selectedIds.contains(doc.id)
                         )
+                    }.toMutableList()
+                    pendingSelectId?.let { id ->
+                        selectedIds.add(id)
+                        val index = list.indexOfFirst { it.id == id }
+                        if (index != -1) {
+                            list[index] = list[index].copy(isSelected = true)
+                        }
+                        pendingSelectId = null
                     }
                     _cartItems.value = list
                     calculateTotal(list)
@@ -97,6 +106,23 @@ class CartViewModel : ViewModel() {
     fun updateSelection(item: CartItem, checked: Boolean) {
         if (checked) selectedIds.add(item.id) else selectedIds.remove(item.id)
         updateItem(item.id) { it.copy(isSelected = checked) }
+    }
+
+    fun selectItemById(id: String) {
+        selectedIds.add(id)
+
+        val list = _cartItems.value ?: return
+
+        val newList = list.map {
+            if (it.id == id) it.copy(isSelected = true)
+            else it
+        }
+
+        _cartItems.value = newList
+        calculateTotal(newList)
+    }
+    fun setPendingSelect(id: String) {
+        pendingSelectId = id
     }
 
     fun toggleSelectAll(checked: Boolean) {
@@ -155,30 +181,55 @@ class CartViewModel : ViewModel() {
 
 
 
-    private fun calculateTotal(list: List<CartItem>) {
+    fun calculateTotal(list: List<CartItem>) {
         val selectedItems = list.filter { it.isSelected }
         val originalTotal = selectedItems.sumOf { it.subtotal }
 
         if (originalTotal == 0) {
-            clearPriceOnly()
+            _discount.value = 0
+            _total.value = 0
+            return
+        }
+        if (
+            !UserSession.isManualCoupon &&
+            !UserSession.hasAutoAppliedCoupon &&
+            UserSession.selectedCoupon == null
+        ) {
+            autoApplyBestCoupon(userCoupons, originalTotal)
+            UserSession.hasAutoAppliedCoupon = true
+            UserSession.isCouponEnabled = UserSession.selectedCoupon != null
+        }
+
+        if (!UserSession.isCouponEnabled) {
+            _discount.value = 0
+            _total.value = originalTotal
             return
         }
 
-        autoApplyBestCoupon(userCoupons, originalTotal)
+        val coupon = UserSession.selectedCoupon
 
-        var discountAmount = 0
-        UserSession.selectedCoupon?.let { coupon ->
-            if (originalTotal >= coupon.minSpend) {
-                discountAmount = when (coupon.type) {
-                    CouponType.AMOUNT -> coupon.value
-                    CouponType.PERCENT -> originalTotal * coupon.value / 100
-                }
+        if (coupon == null || originalTotal < coupon.minSpend) {
+            _discount.value = 0
+            _total.value = originalTotal
+
+
+            if (coupon != null) {
+                UserSession.needMoreAmount = coupon.minSpend - originalTotal
+                UserSession.isRecommendForCoupon = true
             }
+            return
+        }
+
+        val discountAmount = when (coupon.type) {
+            CouponType.AMOUNT -> coupon.value
+            CouponType.PERCENT -> originalTotal * coupon.value / 100
         }
 
         _discount.value = discountAmount
         _total.value = originalTotal - discountAmount
     }
+
+
 
     private fun autoApplyBestCoupon(coupons: List<Coupon>, total: Int) {
         val today = LocalDate.now()
@@ -199,11 +250,5 @@ class CartViewModel : ViewModel() {
             }
 
         UserSession.selectedCoupon = bestCoupon
-    }
-
-    private fun clearPriceOnly() {
-        _discount.value = 0
-        _total.value = 0
-        UserSession.selectedCoupon = null
     }
 }

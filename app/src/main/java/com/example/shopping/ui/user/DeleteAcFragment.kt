@@ -15,8 +15,10 @@ import androidx.navigation.fragment.findNavController
 import com.example.shopping.ui.main.MainActivity
 import com.example.shopping.R
 import com.example.shopping.utils.UserSession
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.QuerySnapshot
 
 class DeleteAcFragment : Fragment() {
 
@@ -61,30 +63,72 @@ class DeleteAcFragment : Fragment() {
     }
     private fun deleteAccount() {
         val uid = UserSession.documentId
-        if (uid.isNullOrEmpty()) {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (uid.isNullOrEmpty() || user == null) {
             Toast.makeText(requireContext(), "登入資訊失效，請重新登入", Toast.LENGTH_SHORT).show()
             return
         }
 
-        db.collection("users")
-            .document(uid)
-            .delete()
-            .addOnSuccessListener {
-                Toast.makeText(requireContext(), "帳戶已成功刪除", Toast.LENGTH_SHORT).show()
-
-                UserSession.isLogin = false
-                UserSession.email = ""
-                UserSession.documentId = ""
-
-                val intent = Intent(requireContext(), MainActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
-            }
-            .addOnFailureListener {
-                Toast.makeText(requireContext(), "刪除帳戶失敗：${it.message}", Toast.LENGTH_SHORT).show()
-            }
+        deleteUserFirestore(uid) {
+            user.delete()
+                .addOnSuccessListener {
+                    clearSessionAndGoHome()
+                }
+                .addOnFailureListener {
+                    Toast.makeText(
+                        requireContext(),
+                        "刪除帳號失敗，請重新登入再試",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+        }
 
     }
+    private fun deleteUserFirestore(uid: String, onDone: () -> Unit) {
+        val userRef = db.collection("users").document(uid)
+
+        val collections = listOf("cart", "coupons", "orders","feedback")
+        val deleteTasks = collections.map { col ->
+            userRef.collection(col).get()
+        }
+
+
+        Tasks.whenAllSuccess<QuerySnapshot>(deleteTasks)
+            .addOnSuccessListener { snapshots ->
+                val batch = db.batch()
+
+                snapshots.forEach { snap ->
+                    snap.documents.forEach { doc ->
+                        batch.delete(doc.reference)
+                    }
+                }
+
+
+                batch.delete(userRef)
+
+                batch.commit()
+                    .addOnSuccessListener { onDone() }
+                    .addOnFailureListener {
+                        Toast.makeText(requireContext(), "刪除資料失敗", Toast.LENGTH_SHORT).show()
+                    }
+            }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "讀取使用者資料失敗", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun clearSessionAndGoHome() {
+        UserSession.isLogin = false
+        UserSession.email = ""
+        UserSession.documentId = ""
+        UserSession.selectedCoupon = null
+        UserSession.isCouponEnabled = false
+
+        val intent = Intent(requireContext(), MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+    }
+
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == android.R.id.home) {

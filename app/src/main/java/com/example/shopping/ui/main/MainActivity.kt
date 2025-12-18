@@ -124,6 +124,12 @@ class MainActivity : AppCompatActivity() {
     fun clearSearch(){
         binding.searchBar.searchInput.setText("")
     }
+    fun clearSearchFocus() {
+        binding.searchBar.searchInput.clearFocus()
+        binding.searchBar.searchInput.isFocusable = false
+        binding.searchBar.searchInput.isFocusableInTouchMode = false
+    }
+
     fun showSimpleTitle(title: String) {
         binding.searchBar.searchBarRoot.visibility = View.GONE
         binding.toolbar.title = title

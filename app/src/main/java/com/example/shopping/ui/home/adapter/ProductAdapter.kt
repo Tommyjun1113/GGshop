@@ -18,7 +18,8 @@ class ProductAdapter(
     private var items: List<Product>,
     private val onItemClick: (Product) -> Unit,
     private val onFavoriteClick: (Product) -> Unit,
-    private val onRequireLogin: () -> Unit
+    private val onRequireLogin: () -> Unit,
+    private val onQuickAddCart: ((Product) -> Unit)? = null
 ) : RecyclerView.Adapter<ProductAdapter.ProductViewHolder>() {
 
     inner class ProductViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -26,6 +27,8 @@ class ProductAdapter(
         val name: TextView = itemView.findViewById(R.id.productName)
         val price: TextView = itemView.findViewById(R.id.productPrice)
         val imgFavorite: ImageButton = itemView.findViewById(R.id.productFavor)
+        val txtRecommend: TextView = itemView.findViewById(R.id.txtRecommend)
+        val btnQuickAdd: ImageButton = itemView.findViewById(R.id.btnQuickAdd)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProductViewHolder {
@@ -59,8 +62,40 @@ class ProductAdapter(
                 onFavoriteClick(item)
             }
         }
+        val needMore = UserSession.needMoreAmount
+        val isRecommendMode =
+            UserSession.isRecommendForCoupon &&
+                    needMore > 0 &&
+                    item.price >= needMore
+
+
+        holder.txtRecommend.visibility =
+            if (isRecommendMode) View.VISIBLE else View.GONE
+
+        if (isRecommendMode) {
+            holder.txtRecommend.text =
+                if (item.price == needMore) "剛好達標"
+                else "補差 NT$$needMore"
+        }
+
+
+        holder.btnQuickAdd.visibility =
+            if (isRecommendMode && onQuickAddCart != null)
+                View.VISIBLE
+            else
+                View.GONE
+
+        holder.btnQuickAdd.setOnClickListener {
+            onQuickAddCart?.invoke(item)
+        }
+
+
         holder.itemView.setOnClickListener {
-            onItemClick(item)
+            if (UserSession.isRecommendForCoupon) {
+                onQuickAddCart?.invoke(item)
+            } else {
+                onItemClick(item)
+            }
         }
     }
     override fun getItemCount() = items.size

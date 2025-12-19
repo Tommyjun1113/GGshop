@@ -48,7 +48,7 @@ class CartViewModel : ViewModel() {
                             price = (doc.getLong("price") ?: 0).toInt(),
                             size = doc.getString("size") ?: "",
                             quantity = (doc.getLong("quantity") ?: 1).toInt(),
-                            imageResId = (doc.getLong("imageResId") ?: 0L).toInt(),
+                            imageKey = ((doc.getString("imageKey") ?: 0L).toString()),
                             isSelected = selectedIds.contains(doc.id)
                         )
                     }.toMutableList()

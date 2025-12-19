@@ -10,5 +10,5 @@ data class OrderItem(
     val price: Int,
     val size: String,
     val quantity: Int,
-    val imageResId: Int
+    val imageKey: String
 ) : Parcelable

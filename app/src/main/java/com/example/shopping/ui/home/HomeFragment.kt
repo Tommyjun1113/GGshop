@@ -261,7 +261,7 @@ class HomeFragment : Fragment() {
             "price" to product.price,
             "size" to "預設",
             "quantity" to 1,
-            "imageResId" to product.imageResId[0]
+            "imageKey" to product.imageKey
         )
 
         cartRef.add(cartItem).addOnSuccessListener { docRef ->

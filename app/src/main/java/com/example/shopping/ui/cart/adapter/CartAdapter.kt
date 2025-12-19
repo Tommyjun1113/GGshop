@@ -39,8 +39,17 @@ class CartAdapter(
         holder.binding.apply {
 
 
-            if (item.imageResId != 0) {
-                itemImage.setImageResource(item.imageResId)
+            val context = root.context
+            val resId = context.resources.getIdentifier(
+                item.imageKey,          // 👈 例如 "nike_1"
+                "drawable",
+                context.packageName
+            )
+
+            if (resId != 0) {
+                itemImage.setImageResource(resId)
+            } else {
+                itemImage.setImageResource(R.drawable.ggicon_1)
             }
             itemName.text = item.productName
             itemSize.text = "尺寸：${item.size}"

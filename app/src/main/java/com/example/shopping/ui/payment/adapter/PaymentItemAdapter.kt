@@ -26,7 +26,18 @@ class PaymentItemAdapter(
         val item = items[position]
 
         holder.binding.apply {
-            imgDetail.setImageResource(item.imageResId)
+            val resId = holder.itemView.context.resources.getIdentifier(
+                item.imageKey,
+                "drawable",
+                holder.itemView.context.packageName
+            )
+            if (resId != 0) {
+                imgDetail.setImageResource(resId)
+            } else {
+                imgDetail.setImageResource(
+                    com.example.shopping.R.drawable.ggicon_1
+                )
+            }
             txtDetailName.text = item.productName
             txtDetailSize.text = "尺寸： ${item.size}"
             txtDetailQty.text = "數量： ${item.quantity}"

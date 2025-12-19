@@ -78,7 +78,7 @@ class Purchase : Fragment() {
                             price = (it["price"] as Long).toInt(),
                             size = it["size"] as String,
                             quantity = (it["quantity"] as Long).toInt(),
-                            imageResId = (it["imageResId"] as Long).toInt()
+                            imageKey = it["imageKey"] as String
                         )
                     }
 

@@ -86,7 +86,7 @@ class ProductFragment : Fragment() {
                     product.price,
                     size,
                     qty,
-                    product.imageResId[0]
+                    product.imageKey
                 )
             }.show(parentFragmentManager, "BuyNow")
         }
@@ -149,7 +149,7 @@ class ProductFragment : Fragment() {
                         "price" to price,
                         "size" to size,
                         "quantity" to quantity,
-                        "imageResId" to imageResId,
+                        "imageKey" to product.imageKey,
                         "createdAt" to System.currentTimeMillis()
                     )
 
@@ -177,7 +177,7 @@ class ProductFragment : Fragment() {
         price: Int,
         size: String,
         quantity: Int,
-        imageResId: Int,
+        imageKey: String,
     ) {
         if (!UserSession.isLogin) {
             Toast.makeText(requireContext(), "請先登入", Toast.LENGTH_SHORT).show()
@@ -193,7 +193,7 @@ class ProductFragment : Fragment() {
                     price = price,
                     size = size,
                     quantity = quantity,
-                    imageResId = imageResId
+                    imageKey = imageKey
                 )
             ),
             total = price * quantity,

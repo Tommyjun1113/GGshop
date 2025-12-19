@@ -7,7 +7,10 @@ import kotlinx.parcelize.Parcelize
 data class Product(
     val id: String,
     val name: String,
+
+    val imageKey :String,
     val imageResId: List<Int>,
+
     val price: Int,
     val description: String,
     var isFavorite: Boolean=false

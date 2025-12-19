@@ -284,7 +284,7 @@ class CartFragment : Fragment() {
                     it.price,
                     it.size,
                     it.quantity,
-                    it.imageResId
+                    it.imageKey
                 )
             },
             total = viewModel.total.value ?:0,

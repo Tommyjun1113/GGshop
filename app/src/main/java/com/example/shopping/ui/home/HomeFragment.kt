@@ -220,7 +220,7 @@ class HomeFragment : Fragment() {
         if (recommendList.isEmpty()) return
         searchAdapter = ProductAdapter(
             items = emptyList(),
-            onItemClick = { product -> },
+            onItemClick = { product -> findNavController().navigate(HomeFragmentDirections.actionHomeToProductDetail(product))},
             onFavoriteClick = { product ->
                 product.isFavorite = !product.isFavorite
                 searchAdapter.notifyDataSetChanged()

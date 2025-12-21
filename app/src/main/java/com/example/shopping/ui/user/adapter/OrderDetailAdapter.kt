@@ -6,10 +6,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.shopping.R
 import com.example.shopping.databinding.ItemOrderDetailBinding
+import com.example.shopping.ui.user.order.OrderItem
 
 class OrderDetailAdapter(
-    private val items: List<Map<String, Any>>,
-    private val paymentMethod: String
+    private val items: List<OrderItem>,
 ) : RecyclerView.Adapter<OrderDetailAdapter.DetailViewHolder>() {
 
     inner class DetailViewHolder(val binding: ItemOrderDetailBinding) :
@@ -27,18 +27,23 @@ class OrderDetailAdapter(
     override fun onBindViewHolder(holder: DetailViewHolder, position: Int) {
         val item = items[position]
 
-        with(holder.binding) {
-            val imageResId= (item["imageResId"]as? Number)?.toInt()?:0
-            if (imageResId != 0){
-                imgDetail.setImageResource(imageResId)
-            }else{
-                imgDetail.setImageResource(null ?:0)
-            }
+        holder.binding.apply{
 
-            txtDetailName.text = item["productName"].toString() ?: ""
-            txtDetailSize.text = "尺寸：${item["size"]}"
-            txtDetailQty.text = "數量：${item["quantity"]}"
-            txtDetailPrice.text = "單價：NT$${item["price"]}"
+            val imageResId = root.context.resources.getIdentifier(
+                item.imageKey,
+                "drawable",
+                root.context.packageName
+            )
+
+            if (imageResId != 0) {
+                imgDetail.setImageResource(imageResId)
+            } else {
+                imgDetail.setImageResource(R.drawable.ggicon_1)
+            }
+            txtDetailName.text = item.productName
+            txtDetailSize.text = "尺寸：${item.size}"
+            txtDetailQty.text = "數量：${item.quantity}"
+            txtDetailPrice.text = "單價：NT$${item.price}"
         }
     }
 

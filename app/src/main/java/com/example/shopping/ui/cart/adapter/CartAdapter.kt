@@ -41,7 +41,7 @@ class CartAdapter(
 
             val context = root.context
             val resId = context.resources.getIdentifier(
-                item.imageKey,          // 👈 例如 "nike_1"
+                item.imageKey,
                 "drawable",
                 context.packageName
             )

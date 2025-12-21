@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.shopping.R
@@ -19,6 +20,8 @@ class OrderDetailFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var orderId: String
+
+    private val viewModel: OrderDetailViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,56 +48,57 @@ class OrderDetailFragment : Fragment() {
 
         binding.recyclerOrderDetail.layoutManager =
             LinearLayoutManager(requireContext())
-
-        loadOrderDetail()
+        observeViewModel()
+        viewModel.loadOrderDetail(orderId)
     }
 
+    private fun observeViewModel() {
 
-    private fun loadOrderDetail() {
-        val db = FirebaseFirestore.getInstance()
+        viewModel.items.observe(viewLifecycleOwner) {
+            binding.recyclerOrderDetail.adapter = OrderDetailAdapter(it)
+        }
 
-        db.collection("users")
-            .document(UserSession.documentId)
-            .collection("orders")
-            .document(orderId)
-            .get()
-            .addOnSuccessListener { doc ->
+        viewModel.total.observe(viewLifecycleOwner) {
+            binding.txtDetailTotal.text = "總金額：NT$$it"
+        }
 
-                if (!doc.exists()) return@addOnSuccessListener
+        viewModel.discount.observe(viewLifecycleOwner) {
+            updateCouponInfo()
+        }
 
-                val items = doc.get("items") as List<Map<String, Any>>
-                val total = (doc.getLong("total") ?: 0)
-                val discount = doc.getLong("discount") ?: 0
-                val couponTitle = doc.getString("couponTitle")
-                val paymentMethod = doc.getString("paymentMethod") ?: ""
-                val createdAt = doc.getLong("createdAt") ?: 0L
+        viewModel.couponTitle.observe(viewLifecycleOwner) {
+            updateCouponInfo()
+        }
 
-                binding.txtDetailTime.text =
-                    java.text.SimpleDateFormat("yyyy-MM-dd HH:mm")
-                        .format(java.util.Date(createdAt))
+        viewModel.paymentMethod.observe(viewLifecycleOwner) {
+            binding.txtPaymentMethod.text = "付款方式：$it"
 
-                binding.txtDetailTotal.text = "總金額：NT$$total"
-
-                if (discount > 0 && !couponTitle.isNullOrBlank()) {
-                    binding.txtCouponInfo.visibility = View.VISIBLE
-                    binding.txtCouponInfo.text =
-                        "使用優惠券：$couponTitle\n折扣金額：-NT$$discount"
-                } else {
-                    binding.txtCouponInfo.visibility = View.GONE
-                }
-                binding.txtPaymentMethod.text = "付款方式：$paymentMethod"
-
-                val iconRes = when (paymentMethod) {
-                    "信用卡" -> R.drawable.img_6
-                    "貨到付款" -> R.drawable.img_7
-                    "LINE Pay" -> R.drawable.img_8
-                    else -> R.drawable.img_6
-                }
-                binding.imgPaymentIcon.setImageResource(iconRes)
-
-                binding.recyclerOrderDetail.adapter =
-                    OrderDetailAdapter(items, paymentMethod)
+            val iconRes = when (it) {
+                "信用卡" -> R.drawable.img_6
+                "貨到付款" -> R.drawable.img_7
+                "LINE Pay" -> R.drawable.img_8
+                else -> R.drawable.img_6
             }
+            binding.imgPaymentIcon.setImageResource(iconRes)
+        }
+
+        viewModel.createdAt.observe(viewLifecycleOwner) {
+            binding.txtDetailTime.text =
+                java.text.SimpleDateFormat("yyyy-MM-dd HH:mm")
+                    .format(java.util.Date(it))
+        }
+    }
+    private fun updateCouponInfo() {
+        val discount = viewModel.discount.value ?: 0
+        val title = viewModel.couponTitle.value
+
+        if (discount > 0 && !title.isNullOrBlank()) {
+            binding.txtCouponInfo.visibility = View.VISIBLE
+            binding.txtCouponInfo.text =
+                "使用優惠券：$title\n折扣金額：-NT$$discount"
+        } else {
+            binding.txtCouponInfo.visibility = View.GONE
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

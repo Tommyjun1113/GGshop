@@ -34,6 +34,7 @@ class CartViewModel : ViewModel() {
     fun loadCart() {
         if (!UserSession.isLogin) {
             _cartItems.value = emptyList()
+            _cartItemsUI.value = emptyList()
             _discount.value = 0
             _total.value = 0
             return
@@ -143,8 +144,10 @@ class CartViewModel : ViewModel() {
         }
 
         _cartItems.value = newList
+        _cartItemsUI.value = mapToUI(newList)
         calculateTotal(newList)
     }
+
     fun setPendingSelect(id: String) {
         pendingSelectId = id
     }
@@ -157,6 +160,7 @@ class CartViewModel : ViewModel() {
 
         val newList = list.map { it.copy(isSelected = checked) }
         _cartItems.value = newList
+        _cartItemsUI.value = mapToUI(newList)
         calculateTotal(newList)
     }
 
@@ -170,6 +174,7 @@ class CartViewModel : ViewModel() {
                 val newList = _cartItems.value?.filter { it.id != item.id } ?: emptyList()
                 selectedIds.remove(item.id)
                 _cartItems.value = newList
+                _cartItemsUI.value = mapToUI(newList)
                 calculateTotal(newList)
             }
     }
@@ -192,6 +197,7 @@ class CartViewModel : ViewModel() {
             val newList = list.filterNot { it.isSelected }
             selectedIds.clear()
             _cartItems.value = newList
+            _cartItemsUI.value = mapToUI(newList)
             calculateTotal(newList)
         }
     }
@@ -200,6 +206,7 @@ class CartViewModel : ViewModel() {
         val list = _cartItems.value ?: return
         val newList = list.map { if (it.id == id) transform(it) else it }
         _cartItems.value = newList
+        _cartItemsUI.value = mapToUI(newList)
         calculateTotal(newList)
     }
 

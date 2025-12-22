@@ -19,8 +19,6 @@ import com.example.shopping.ui.main.MainActivity
 import com.example.shopping.ui.user.order.OrderItem
 import com.example.shopping.ui.user.order.OrderModel
 import com.example.shopping.utils.UserSession
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.serialization.builtins.UIntArraySerializer
 
 class CartFragment : Fragment() {
 
@@ -86,23 +84,40 @@ class CartFragment : Fragment() {
         adapter = CartAdapter(
             emptyList(),
             object : CartAdapter.CartActions {
-                override fun onSelectionChanged(item: CartItem, checked: Boolean) {
-                    viewModel.updateSelection(item, checked)
+
+                override fun onSelectionChanged(item: CartItemUI, checked: Boolean) {
+                    val domain = viewModel.cartItems.value
+                        ?.firstOrNull { it.id == item.id }
+                        ?: return
+                    viewModel.updateSelection(domain, checked)
                 }
 
-                override fun increase(item: CartItem) =
-                    viewModel.updateQty(item, item.quantity + 1)
-
-                override fun decrease(item: CartItem) {
-                    if (item.quantity > 1)
-                        viewModel.updateQty(item, item.quantity - 1)
+                override fun increase(item: CartItemUI) {
+                    val domain = viewModel.cartItems.value
+                        ?.firstOrNull { it.id == item.id }
+                        ?: return
+                    viewModel.updateQty(domain, domain.quantity + 1)
                 }
 
-                override fun delete(item: CartItem) =
-                    viewModel.deleteItem(item)
+                override fun decrease(item: CartItemUI) {
+                    val domain = viewModel.cartItems.value
+                        ?.firstOrNull { it.id == item.id }
+                        ?: return
+                    if (domain.quantity > 1) {
+                        viewModel.updateQty(domain, domain.quantity - 1)
+                    }
+                }
 
-                override fun onItemClick(item: CartItem) =
+                override fun delete(item: CartItemUI) {
+                    val domain = viewModel.cartItems.value
+                        ?.firstOrNull { it.id == item.id }
+                        ?: return
+                    viewModel.deleteItem(domain)
+                }
+
+                override fun onItemClick(item: CartItemUI) {
                     openProduct(item.productId)
+                }
             }
         )
 
@@ -110,9 +125,9 @@ class CartFragment : Fragment() {
         binding.recyclerCart.adapter = adapter
     }
 
-    private fun updateCouponUI() {
+
+    private fun updateCouponUI(list: List<CartItem>) {
         val coupon = UserSession.selectedCoupon
-        val list = viewModel.cartItems.value ?: emptyList()
 
         val hasSelected = list.any { it.isSelected }
         val total = list.filter { it.isSelected }.sumOf { it.subtotal }
@@ -213,7 +228,10 @@ class CartFragment : Fragment() {
 
 
     private fun observeViewModel() {
-        viewModel.cartItems.observe(viewLifecycleOwner) { list ->
+        viewModel.cartItemsUI.observe(viewLifecycleOwner) { uiList ->
+            adapter.updateList(uiList )
+        }
+        viewModel.cartItems.observe(viewLifecycleOwner){ list ->
 
             UserSession.preservedSelectedCartIds.forEach { id ->
                 viewModel.selectItemById(id)
@@ -226,12 +244,12 @@ class CartFragment : Fragment() {
 
             UserSession.preservedSelectedCartIds.clear()
 
-            adapter.updateList(list)
             updateCartUI(list)
-            updateCouponUI()
+            updateCouponUI(list)
         }
         viewModel.discount.observe(viewLifecycleOwner) { discount ->
-            updateCouponUI()
+            val list = viewModel.cartItems.value ?: emptyList()
+            updateCouponUI(list)
             if(discount > 0 && UserSession.isCouponEnabled){
                 binding.txtDiscount.visibility = View.VISIBLE
                 binding.txtDiscount.text = "已套用優惠：-NT$$discount"
@@ -284,7 +302,7 @@ class CartFragment : Fragment() {
                     it.price,
                     it.size,
                     it.quantity,
-                    it.imageKey
+                    it.imageRes.toString()
                 )
             },
             total = viewModel.total.value ?:0,
@@ -309,7 +327,8 @@ class CartFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        updateCouponUI()
+        val list = viewModel.cartItems.value?: emptyList()
+        updateCouponUI(list)
         val main =(requireActivity() as MainActivity)
         main.showSimpleTitle("購物車")
         main.setFavoriteMenuVisible(true)

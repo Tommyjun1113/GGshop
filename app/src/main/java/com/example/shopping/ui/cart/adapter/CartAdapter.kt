@@ -3,22 +3,21 @@ package com.example.shopping.ui.cart.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.example.shopping.R
 import com.example.shopping.databinding.ItemCartBinding
 import com.example.shopping.ui.cart.CartItem
+import com.example.shopping.ui.cart.CartItemUI
 
 class CartAdapter(
-    private var items: List<CartItem>,
+    private var items: List<CartItemUI>,
     private val listener: CartActions
 ) : RecyclerView.Adapter<CartAdapter.CartViewHolder>() {
 
     interface CartActions {
-        fun increase(item: CartItem)
-        fun decrease(item: CartItem)
-        fun delete(item: CartItem)
-        fun onItemClick(item: CartItem)
-        fun onSelectionChanged(item: CartItem, checked: Boolean)
+        fun increase(item: CartItemUI)
+        fun decrease(item: CartItemUI)
+        fun delete(item: CartItemUI)
+        fun onItemClick(item: CartItemUI)
+        fun onSelectionChanged(item: CartItemUI, checked: Boolean)
     }
 
     inner class CartViewHolder(val binding: ItemCartBinding) :
@@ -38,19 +37,7 @@ class CartAdapter(
 
         holder.binding.apply {
 
-
-            val context = root.context
-            val resId = context.resources.getIdentifier(
-                item.imageKey,
-                "drawable",
-                context.packageName
-            )
-
-            if (resId != 0) {
-                itemImage.setImageResource(resId)
-            } else {
-                itemImage.setImageResource(R.drawable.ggicon_1)
-            }
+            itemImage.setImageResource(item.imageRes)
             itemName.text = item.productName
             itemSize.text = "尺寸：${item.size}"
             itemPrice.text = "單價：NT$${item.price}"
@@ -60,9 +47,6 @@ class CartAdapter(
             root.setOnClickListener { listener.onItemClick(item) }
             btnIncrease.setOnClickListener { listener.increase(item) }
             btnDecrease.setOnClickListener { listener.decrease(item) }
-            root.setOnClickListener {
-                listener.onItemClick(item)
-            }
             checkSelect.setOnCheckedChangeListener(null)
             checkSelect.isChecked = item.isSelected
 
@@ -75,8 +59,10 @@ class CartAdapter(
     }
 
     override fun getItemCount() = items.size
-    fun updateList(newList: List<CartItem>) {
-        items = newList
+    fun updateList(newList: List<CartItemUI>?) {
+        if (newList != null) {
+            items = newList
+        }
         notifyDataSetChanged()
     }
 }

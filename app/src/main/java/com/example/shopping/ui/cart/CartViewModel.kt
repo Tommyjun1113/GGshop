@@ -3,6 +3,7 @@ package com.example.shopping.ui.cart
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.shopping.ui.home.ProductDataSource
 import com.example.shopping.ui.notifications.Coupon
 import com.example.shopping.ui.notifications.CouponType
 import com.example.shopping.utils.UserSession
@@ -17,6 +18,10 @@ class CartViewModel : ViewModel() {
     private val selectedIds = mutableSetOf<String>()
     private val _cartItems = MutableLiveData<List<CartItem>>(emptyList())
     val cartItems: LiveData<List<CartItem>> = _cartItems
+
+    private val _cartItemsUI = MutableLiveData<List<CartItemUI>>()
+    val cartItemsUI: LiveData<List<CartItemUI>> = _cartItemsUI
+
     private val _discount = MutableLiveData(0)
     val discount: LiveData<Int> = _discount
 
@@ -40,15 +45,17 @@ class CartViewModel : ViewModel() {
                 .collection("cart")
                 .get()
                 .addOnSuccessListener { result ->
-                    val list = result.map { doc ->
+                    val list = result.mapNotNull { doc ->
+                        val productId = doc.getString("productId") ?: return@mapNotNull null
+                        val product = ProductDataSource.findById(productId) ?: return@mapNotNull null
                         CartItem(
                             id = doc.id,
-                            productId = doc.getString("productId") ?: "",
-                            productName = doc.getString("productName") ?: "",
+                            productId = productId,
+                            productName = product.name,
                             price = (doc.getLong("price") ?: 0).toInt(),
                             size = doc.getString("size") ?: "",
                             quantity = (doc.getLong("quantity") ?: 1).toInt(),
-                            imageKey = ((doc.getString("imageKey") ?: 0L).toString()),
+                            imageRes= product.imageResId.first(),
                             isSelected = selectedIds.contains(doc.id)
                         )
                     }.toMutableList()
@@ -61,10 +68,27 @@ class CartViewModel : ViewModel() {
                         pendingSelectId = null
                     }
                     _cartItems.value = list
+                    _cartItemsUI.value = mapToUI(list)
                     calculateTotal(list)
                 }
+
         }
     }
+
+    private fun mapToUI(list: List<CartItem>): List<CartItemUI> =
+        list.map {
+            CartItemUI(
+                id = it.id,
+                productId = it.productId,
+                productName = it.productName,
+                imageRes = it.imageRes,
+                size = it.size,
+                price = it.price,
+                quantity = it.quantity,
+                isSelected = it.isSelected
+            )
+        }
+
     private fun loadUserCoupons(onDone: () -> Unit) {
         db.collection("users")
             .document(UserSession.documentId)

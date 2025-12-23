@@ -72,7 +72,6 @@ class CartFragment : Fragment() {
                 CartFragmentDirections.actionCartToNotifications()
             )
         }
-
         binding.checkAll.setOnCheckedChangeListener { _, checked ->
             viewModel.toggleSelectAll(checked)
         }
@@ -189,6 +188,7 @@ class CartFragment : Fragment() {
 
                     findNavController().navigate(
                         CartFragmentDirections.actionCartToHome()
+
                     )
                 }
 
@@ -247,6 +247,14 @@ class CartFragment : Fragment() {
             updateCartUI(list)
             updateCouponUI(list)
         }
+        viewModel.isAllSelected.observe(viewLifecycleOwner) { checked ->
+            binding.checkAll.setOnCheckedChangeListener(null)
+            binding.checkAll.isChecked = checked
+            binding.checkAll.setOnCheckedChangeListener { _, isChecked ->
+                viewModel.toggleSelectAll(isChecked)
+            }
+        }
+
         viewModel.discount.observe(viewLifecycleOwner) { discount ->
             val list = viewModel.cartItems.value ?: emptyList()
             updateCouponUI(list)
@@ -302,7 +310,7 @@ class CartFragment : Fragment() {
                     it.price,
                     it.size,
                     it.quantity,
-                    it.imageRes.toString()
+                    it.imageKey
                 )
             },
             total = viewModel.total.value ?:0,

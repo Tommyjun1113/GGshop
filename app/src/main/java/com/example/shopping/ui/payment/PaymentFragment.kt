@@ -168,12 +168,39 @@ class PaymentFragment : Fragment() {
         }
 
         val orderData = mapOf(
-            "items" to order.items,
+            "items" to order.items.map { item ->
+                mapOf(
+                    "productId" to item.productId,
+                    "productName" to item.productName,
+                    "imageKey" to item.imageKey,
+                    "price" to item.price,
+                    "quantity" to item.quantity,
+                    "size" to item.size
+                )
+            },
             "total" to order.total,
             "discount" to order.discount,
-            "couponId" to coupon?.id,
-            "couponTitle" to coupon?.title,
+            "coupon" to coupon?.let {
+                mapOf(
+                    "id" to it.id,
+                    "title" to it.title,
+                    "value" to it.value
+                )
+            },
             "paymentMethod" to paymentMethod,
+            "shippingInfo" to when (paymentMethod) {
+                "貨到付款" -> mapOf(
+                    "name" to binding.edtReceiverName.text.toString(),
+                    "phone" to binding.edtReceiverPhone.text.toString(),
+                    "address" to binding.edtReceiverAddress.text.toString()
+                )
+                "信用卡" -> mapOf(
+                    "CardNumber" to binding.edtCardNumber.text.toString(),
+                    "Expire" to binding.edtCardTime.text.toString(),
+                    "Cvc" to binding.edtCardCVV.text.toString()
+                ) else -> "Line"
+            },
+            "status" to "PENDING",
             "createdAt" to System.currentTimeMillis()
         )
 

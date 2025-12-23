@@ -8,6 +8,7 @@ data class CartItem(
     val size: String = "",
     var quantity: Int = 1,
     val imageRes: Int,
+    val imageKey: String = "",
     var isSelected: Boolean = false
 ) {
     val subtotal: Int get() = price * quantity

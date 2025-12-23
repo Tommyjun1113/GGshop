@@ -108,6 +108,7 @@ class LoginActivity : AppCompatActivity() {
         auth.signInWithEmailAndPassword(email, password)
             .addOnSuccessListener {
                 handleLoginSuccess(it.user!!)
+                grantWelcomeCoupon(it.user!!.uid)
             }
             .addOnFailureListener {
                 Toast.makeText(this, "登入失敗：${it.message}", Toast.LENGTH_SHORT).show()
@@ -181,6 +182,7 @@ class LoginActivity : AppCompatActivity() {
                 auth.signInWithCustomToken(customToken)
                     .addOnSuccessListener {
                         handleLoginSuccess(it.user!!,name)
+                        grantWelcomeCoupon(it.user!!.uid)
                     }
             },
             { error ->
@@ -208,6 +210,7 @@ class LoginActivity : AppCompatActivity() {
                 auth.signInWithCredential(credential)
                     .addOnSuccessListener {
                         handleLoginSuccess(it.user!!,it.user!!.displayName)
+                        grantWelcomeCoupon(it.user!!.uid)
                     }
                     .addOnFailureListener { e ->
                         Toast.makeText(this, "登入錯誤：${e.message}", Toast.LENGTH_LONG).show()
@@ -219,6 +222,7 @@ class LoginActivity : AppCompatActivity() {
             currentUser.linkWithCredential(credential)
                 .addOnSuccessListener {
                     handleLoginSuccess(it.user!!)
+                    grantWelcomeCoupon(it.user!!.uid)
                 }
                 .addOnFailureListener { e ->
                     Toast.makeText(this, "合併帳號失敗：${e.message}", Toast.LENGTH_LONG).show()
@@ -230,6 +234,7 @@ class LoginActivity : AppCompatActivity() {
         auth.signInWithCredential(credential)
             .addOnSuccessListener {
                 handleLoginSuccess(it.user!!,it.user!!.displayName)
+                grantWelcomeCoupon(it.user!!.uid)
             }
             .addOnFailureListener { e ->
 

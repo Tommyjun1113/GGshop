@@ -21,6 +21,8 @@ class CartViewModel : ViewModel() {
 
     private val _cartItemsUI = MutableLiveData<List<CartItemUI>>()
     val cartItemsUI: LiveData<List<CartItemUI>> = _cartItemsUI
+    private val _isAllSelected = MutableLiveData(false)
+    val isAllSelected: LiveData<Boolean> = _isAllSelected
 
     private val _discount = MutableLiveData(0)
     val discount: LiveData<Int> = _discount
@@ -55,7 +57,8 @@ class CartViewModel : ViewModel() {
                             price = (doc.getLong("price") ?: 0).toInt(),
                             size = doc.getString("size") ?: "",
                             quantity = (doc.getLong("quantity") ?: 1).toInt(),
-                            imageRes= product.imageResId.first(),
+                            imageKey = doc.getString("imageKey")?: product.imageKey,
+                            imageRes = product.imageResId.first(),
                             isSelected = selectedIds.contains(doc.id)
                         )
                     }.toMutableList()
@@ -143,8 +146,14 @@ class CartViewModel : ViewModel() {
         }
 
         _cartItems.value = newList
+        _cartItemsUI.value = mapToUI(newList)
         calculateTotal(newList)
     }
+
+    private fun updateSelectAllState(list: List<CartItem>) {
+        _isAllSelected.value = list.isNotEmpty() && list.all { it.isSelected }
+    }
+
     fun setPendingSelect(id: String) {
         pendingSelectId = id
     }
@@ -157,6 +166,8 @@ class CartViewModel : ViewModel() {
 
         val newList = list.map { it.copy(isSelected = checked) }
         _cartItems.value = newList
+        _cartItemsUI.value = mapToUI(newList)
+        _isAllSelected.value = checked
         calculateTotal(newList)
     }
 
@@ -170,6 +181,8 @@ class CartViewModel : ViewModel() {
                 val newList = _cartItems.value?.filter { it.id != item.id } ?: emptyList()
                 selectedIds.remove(item.id)
                 _cartItems.value = newList
+                _cartItemsUI.value = mapToUI(newList)
+                updateSelectAllState(newList)
                 calculateTotal(newList)
             }
     }
@@ -192,6 +205,8 @@ class CartViewModel : ViewModel() {
             val newList = list.filterNot { it.isSelected }
             selectedIds.clear()
             _cartItems.value = newList
+            _cartItemsUI.value = mapToUI(newList)
+            updateSelectAllState(newList)
             calculateTotal(newList)
         }
     }
@@ -200,6 +215,8 @@ class CartViewModel : ViewModel() {
         val list = _cartItems.value ?: return
         val newList = list.map { if (it.id == id) transform(it) else it }
         _cartItems.value = newList
+        _cartItemsUI.value = mapToUI(newList)
+        updateSelectAllState(newList)
         calculateTotal(newList)
     }
 

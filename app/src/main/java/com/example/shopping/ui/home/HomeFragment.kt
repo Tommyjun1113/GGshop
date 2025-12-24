@@ -32,6 +32,9 @@ class HomeFragment : Fragment() {
     private lateinit var searchAdapter: ProductAdapter
     private lateinit var rootView: View
 
+    private var favoriteSyncStarted = false
+
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -45,6 +48,13 @@ class HomeFragment : Fragment() {
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        if (!favoriteSyncStarted && UserSession.isLogin) {
+            favoriteSyncStarted = true
+            FavoriteManager.startFavoriteSync {
+                refreshAllProductLists()
+            }
+        }
+
         resetToHomeState()
     }
 
@@ -99,8 +109,7 @@ class HomeFragment : Fragment() {
                 )
             },
             onFavoriteClick = { product ->
-                product.isFavorite = !product.isFavorite
-                searchAdapter.notifyDataSetChanged()
+                FavoriteManager.toggleFavorite(product.id)
             },
             onRequireLogin = {
                 Toast.makeText(requireContext(), "請先登入", Toast.LENGTH_SHORT).show()
@@ -166,12 +175,8 @@ class HomeFragment : Fragment() {
             },
 
             onFavoriteClick = { product ->
-                val newState = FavoriteManager.toggleFavorite(
-                    requireContext(),
-                    product.id
-                )
-                product.isFavorite = newState
-                recycler.adapter?.notifyDataSetChanged()
+                FavoriteManager.toggleFavorite(product.id)
+
             },
             onRequireLogin = {
                 Toast.makeText(requireContext(),"請先登入",Toast.LENGTH_SHORT).show()
@@ -216,8 +221,7 @@ class HomeFragment : Fragment() {
             items = recommendList,
             onItemClick = { product -> findNavController().navigate(HomeFragmentDirections.actionHomeToProductDetail(product))},
             onFavoriteClick = { product ->
-                product.isFavorite = !product.isFavorite
-                searchAdapter.notifyDataSetChanged()
+                FavoriteManager.toggleFavorite(product.id)
             },
             onRequireLogin = {
                 Toast.makeText(requireContext(), "請先登入", Toast.LENGTH_SHORT).show()
@@ -268,6 +272,22 @@ class HomeFragment : Fragment() {
             UserSession.isRecommendForCoupon = false
             UserSession.needMoreAmount = 0
             findNavController().navigate(R.id.navigation_cart)
+        }
+    }
+
+    private fun refreshAllProductLists() {
+        rootView.findViewById<RecyclerView>(R.id.recycler_hot_items)
+            ?.adapter?.notifyDataSetChanged()
+
+        rootView.findViewById<RecyclerView>(R.id.recycler_new_items)
+            ?.adapter?.notifyDataSetChanged()
+
+        rootView.findViewById<RecyclerView>(R.id.recycler_recommend_items)
+            ?.adapter?.notifyDataSetChanged()
+
+        // 搜尋結果也一起
+        if (::searchAdapter.isInitialized) {
+            searchAdapter.notifyDataSetChanged()
         }
     }
 

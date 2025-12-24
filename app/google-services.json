@@ -23,8 +23,12 @@
           }
         },
         {
-          "client_id": "730247249500-43kpcvv2vj0mm7j295shg9saplm2dglu.apps.googleusercontent.com",
-          "client_type": 3
+          "client_id": "730247249500-j9lofgkqurjjftjlf8hl3iku8ia0hbav.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.shopping",
+            "certificate_hash": "eff1acc23273edd1d517c7835aef98eaf886a810"
+          }
         }
       ],
       "api_key": [
@@ -36,7 +40,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "730247249500-43kpcvv2vj0mm7j295shg9saplm2dglu.apps.googleusercontent.com",
+              "client_id": "730247249500-opiif5gaafqlhte305fh5ngca4umeoop.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

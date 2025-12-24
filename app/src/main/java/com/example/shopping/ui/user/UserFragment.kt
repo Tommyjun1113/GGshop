@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -23,6 +22,11 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.auth.FirebaseAuth
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import com.example.shopping.utils.FavoriteManager
+import android.graphics.Bitmap
+import android.provider.MediaStore
+import java.io.ByteArrayOutputStream
+
 
 data class UserItem(val usertv: String, val usertv2: String)
 
@@ -42,11 +46,12 @@ class UserFragment : Fragment() {
     private val pickImage = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        if (uri != null) {
-            binding.userAvatar.setImageURI(uri)
-            uploadAvatarToFirebase(uri)
-        }
+        uri ?: return@registerForActivityResult
+
+        binding.userAvatar.setImageURI(uri)
+        uploadAvatarToFirebase(uri)
     }
+
 
     private val userItems = listOf(
         UserItem("帳戶設定", ">"),
@@ -76,6 +81,7 @@ class UserFragment : Fragment() {
         logout.setOnClickListener {
             FirebaseAuth.getInstance().signOut()
             UserSession.clear()
+            FavoriteManager.stopFavoriteSync()
             val intent = Intent(requireContext(), MainActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
@@ -130,8 +136,6 @@ class UserFragment : Fragment() {
 
                 val avatarUrl = doc.getString("avatarUrl")
                 if (avatarUrl.isNullOrEmpty()) {
-
-                    userRef.update("avatarUrl", "")
                     binding.userAvatar.setImageResource(R.drawable.file)
 
                 } else {
@@ -150,18 +154,44 @@ class UserFragment : Fragment() {
         val uid = UserSession.documentId
         if (uid.isEmpty()) return
 
-        val ref = storage.reference.child("avatars/$uid.jpg")
+        try {
+            // 1️⃣ 讀成 Bitmap
+            val bitmap = MediaStore.Images.Media.getBitmap(
+                requireContext().contentResolver,
+                uri
+            )
 
-        ref.putFile(uri)
-            .addOnSuccessListener {
-                ref.downloadUrl.addOnSuccessListener { downloadUrl ->
-                    saveAvatarUrl(downloadUrl.toString())
+            // 2️⃣ 壓縮
+            val baos = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos)
+            val data = baos.toByteArray()
+
+            // 3️⃣ 上傳 bytes（比 putFile 穩）
+            val ref = storage.reference.child("avatars/$uid.jpg")
+
+            ref.putBytes(data)
+                .addOnSuccessListener {
+                    ref.downloadUrl.addOnSuccessListener { downloadUrl ->
+                        saveAvatarUrl(downloadUrl.toString())
+                    }
                 }
-            }
-            .addOnFailureListener {
-                Toast.makeText(requireContext(), "上傳失敗", Toast.LENGTH_SHORT).show()
-            }
+                .addOnFailureListener { e ->
+                    Toast.makeText(
+                        requireContext(),
+                        "上傳失敗：${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+        } catch (e: Exception) {
+            Toast.makeText(
+                requireContext(),
+                "圖片處理失敗",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
+
 
 
     private fun saveAvatarUrl(url: String) {

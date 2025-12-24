@@ -12,7 +12,6 @@ import com.android.volley.toolbox.Volley
 import com.example.shopping.R
 import com.example.shopping.ui.main.MainActivity
 import com.example.shopping.utils.FavoriteManager
-import com.example.shopping.utils.FavoriteRepository
 import com.example.shopping.utils.UserSession
 import com.google.firebase.auth.*
 import com.google.firebase.firestore.FirebaseFirestore
@@ -289,14 +288,12 @@ class LoginActivity : AppCompatActivity() {
         UserSession.email = user.email ?: ""
         UserSession.documentId = user.uid
 
-        FavoriteRepository.getFavorites { firebaseIds ->
-            FavoriteManager.setFavorites(
-                context = this,
-                ids = firebaseIds
-            )
-            goMainAfterLogin(user)
-            finish()
+        FavoriteManager.startFavoriteSync {
+
         }
+        goMainAfterLogin(user)
+        finish()
+
 
     }
     private fun handleLoginSuccess(user: FirebaseUser, forceName: String? = null) {

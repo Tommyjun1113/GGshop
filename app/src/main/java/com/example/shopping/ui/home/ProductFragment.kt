@@ -92,28 +92,37 @@ class ProductFragment : Fragment() {
         }
     }
 
-    private fun setupFavoriteButton(){
-        val context = requireContext()
-        fun refreshFavoriteIcon(){
-            val isFavorite=
+    private fun setupFavoriteButton() {
+
+        fun refreshFavoriteIcon() {
+            val isFavorite =
                 UserSession.isLogin &&
-                        FavoriteManager.isFavorite(context,product.id)
+                        FavoriteManager.isFavorite(product.id)
+
             binding.imageButton.setImageResource(
-                if(isFavorite) R.drawable.favor else R.drawable.heart
+                if (isFavorite) R.drawable.favor else R.drawable.heart
             )
         }
+
         refreshFavoriteIcon()
+
+        if (UserSession.isLogin) {
+            FavoriteManager.startFavoriteSync {
+                refreshFavoriteIcon()
+            }
+        }
         binding.imageButton.setOnClickListener {
-            if(!UserSession.isLogin){
-                Toast.makeText(context,"請先登入!!",Toast.LENGTH_SHORT).show()
-                startActivity(Intent(context, LoginActivity::class.java))
+
+            if (!UserSession.isLogin) {
+                Toast.makeText(requireContext(), "請先登入!!", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(requireContext(), LoginActivity::class.java))
                 return@setOnClickListener
             }
-            val newState = FavoriteManager.toggleFavorite(context,product.id)
-            product.isFavorite = newState
-            refreshFavoriteIcon()
+            FavoriteManager.toggleFavorite(product.id)
+
         }
     }
+
     private fun addToCart(
         productId: String,
         productName: String,

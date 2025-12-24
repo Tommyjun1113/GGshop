@@ -8,7 +8,7 @@ object UserSession {
         var isLogin: Boolean = false
         var email :String =""
         var documentId :String=""
-
+        val favoriteCache = mutableSetOf<String>()
         var selectedCoupon : Coupon? = null
         var isManualCoupon : Boolean = false
         var isCouponEnabled: Boolean = false

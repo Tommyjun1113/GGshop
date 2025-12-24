@@ -55,7 +55,7 @@ class ProductAdapter(
             }
         } else {
             holder.imgFavorite.visibility = View.VISIBLE
-            item.isFavorite = FavoriteManager.isFavorite(context, item.id)
+            item.isFavorite = FavoriteManager.isFavorite(item.id)
             holder.imgFavorite.setImageResource(
                 if (item.isFavorite) R.drawable.favor else R.drawable.heart
             )

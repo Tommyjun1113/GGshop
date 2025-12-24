@@ -16,6 +16,7 @@ import com.example.shopping.ui.home.ProductDataSource
 import com.example.shopping.ui.home.adapter.ProductAdapter
 import com.example.shopping.ui.main.MainActivity
 import com.example.shopping.utils.FavoriteManager
+import com.example.shopping.utils.UserSession
 
 class FavorFragment : Fragment() {
     private lateinit var recyclerFavor : RecyclerView
@@ -41,32 +42,26 @@ class FavorFragment : Fragment() {
         loadFavoriteProducts()
     }
     private fun loadFavoriteProducts() {
-        val favoriteIds = FavoriteManager.getFavorites(requireContext())
-
         val favoriteProducts = ProductDataSource.allProducts
-            .filter { it.id in favoriteIds }
+            .filter { it.id in UserSession.favoriteCache }
 
         recyclerFavor.adapter = ProductAdapter(
             favoriteProducts,
             onItemClick = { product ->
-                val action = FavorFragmentDirections.actionFavorToProductDetail(product)
+                val action =
+                    FavorFragmentDirections.actionFavorToProductDetail(product)
                 findNavController().navigate(action)
             },
             onFavoriteClick = { product ->
-                val newState = FavoriteManager.toggleFavorite(
-                    requireContext(),
-                    product.id
-                )
-                product.isFavorite = newState
-                loadFavoriteProducts()
+                FavoriteManager.toggleFavorite(product.id)
             },
-            onRequireLogin = {
-
-            }
+            onRequireLogin = {}
         )
+
         layoutEmpty.visibility =
             if (favoriteProducts.isEmpty()) View.VISIBLE else View.GONE
     }
+
 
 
 
@@ -84,7 +79,9 @@ class FavorFragment : Fragment() {
         main.showProductToolbar("我的最愛")
         main.hideProductActionBar()
         main.setFavoriteMenuVisible(false)
-
+        FavoriteManager.startFavoriteSync {
+            loadFavoriteProducts()
+        }
         loadFavoriteProducts()
     }
     override fun onStop() {

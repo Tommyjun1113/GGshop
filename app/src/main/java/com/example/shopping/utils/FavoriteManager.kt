@@ -1,48 +1,64 @@
 package com.example.shopping.utils
 
 import android.content.Context
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 
 object FavoriteManager {
 
-    private const val PREF_NAME = "favorite_pref"
-    private const val KEY_FAVORITES = "favorites"
+    private val db = FirebaseFirestore.getInstance()
+    private var listener: ListenerRegistration? = null
+    private fun favoriteRef(uid: String, productId: String) =
+        db.collection("users")
+            .document(uid)
+            .collection("favorites")
+            .document(productId)
 
-    fun getFavorites(context: Context): MutableSet<String> {
-        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-        return prefs.getStringSet(KEY_FAVORITES, emptySet())?.toMutableSet() ?:mutableSetOf()
-    }
-    fun setFavorites(context: Context, ids: Set<String>) {
-        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+    fun startFavoriteSync(onUpdate: () -> Unit) {
+        if (!UserSession.isLogin) return
 
-        prefs.edit()
-            .putStringSet(KEY_FAVORITES, ids.toMutableSet())
-            .apply()
-    }
-    fun isFavorite(context: Context, productId: String): Boolean {
-        return getFavorites(context).contains(productId)
-    }
+        stopFavoriteSync()
 
-    fun toggleFavorite(context: Context, productId: String): Boolean {
-        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-        val set = getFavorites(context)
+        listener = db.collection("users")
+            .document(UserSession.documentId)
+            .collection("favorites")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) return@addSnapshotListener
 
-        val newState = if (set.contains(productId)) {
-            set.remove(productId)
-            false
-        } else {
-            set.add(productId)
-            true
-        }
-        prefs.edit().putStringSet(KEY_FAVORITES,set).apply()
-        if(UserSession.isLogin){
-            if(newState){
-                FavoriteRepository.addFavorite(productId)
-            }else{
-                FavoriteRepository.removeFavorite(productId)
+                UserSession.favoriteCache.clear()
+                snapshot?.documents?.forEach {
+                    UserSession.favoriteCache.add(it.id)
+                }
+
+                onUpdate()
             }
-        }
-        return newState
     }
 
+    fun stopFavoriteSync() {
+        listener?.remove()
+        listener = null
+    }
 
+    fun isFavorite(productId: String): Boolean {
+        return UserSession.favoriteCache.contains(productId)
+    }
+
+    fun toggleFavorite(productId: String) {
+        val uid = UserSession.documentId
+        val ref = db.collection("users")
+            .document(uid)
+            .collection("favorites")
+            .document(productId)
+
+        if (UserSession.favoriteCache.contains(productId)) {
+            ref.delete()
+        } else {
+            ref.set(
+                mapOf(
+                    "productId" to productId,
+                    "createdAt" to System.currentTimeMillis()
+                )
+            )
+        }
+    }
 }

@@ -19,7 +19,8 @@ class ProductAdapter(
     private val onItemClick: (Product) -> Unit,
     private val onFavoriteClick: (Product) -> Unit,
     private val onRequireLogin: () -> Unit,
-    private val onQuickAddCart: ((Product) -> Unit)? = null
+    private val onQuickAddCart: ((Product) -> Unit)? = null,
+    private val recommendNeedMore: Int? = null
 ) : RecyclerView.Adapter<ProductAdapter.ProductViewHolder>() {
 
     inner class ProductViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -62,37 +63,24 @@ class ProductAdapter(
                 onFavoriteClick(item)
             }
         }
-        val needMore = UserSession.needMoreAmount
-        val isRecommendMode =
-            UserSession.isRecommendForCoupon &&
-                    needMore > 0 &&
-                    item.price >= needMore
 
+        if (recommendNeedMore != null && recommendNeedMore > 0) {
 
-        holder.txtRecommend.visibility =
-            if (isRecommendMode) View.VISIBLE else View.GONE
+            holder.txtRecommend.visibility = View.VISIBLE
+            holder.txtRecommend.text = "補差 NT$$recommendNeedMore"
 
-        if (isRecommendMode) {
-            holder.txtRecommend.text =
-                if (item.price == needMore) "剛好達標"
-                else "補差 NT$$needMore"
-        }
+            holder.btnQuickAdd.visibility =
+                if (onQuickAddCart != null) View.VISIBLE else View.GONE
 
-
-        holder.btnQuickAdd.visibility =
-            if (isRecommendMode && onQuickAddCart != null)
-                View.VISIBLE
-            else
-                View.GONE
-
-        holder.btnQuickAdd.setOnClickListener {
-            onQuickAddCart?.invoke(item)
+        } else {
+            holder.txtRecommend.visibility = View.GONE
+            holder.btnQuickAdd.visibility = View.GONE
         }
 
 
         holder.itemView.setOnClickListener {
-            if (UserSession.isRecommendForCoupon) {
-                onQuickAddCart?.invoke(item)
+            if (recommendNeedMore != null && onQuickAddCart != null) {
+                onQuickAddCart.invoke(item)
             } else {
                 onItemClick(item)
             }

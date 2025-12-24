@@ -4,6 +4,7 @@ data class CartItemUI(
     val id: String,
     val productId: String,
     val productName: String,
+    val imageKey: String = "",
     val imageRes: Int,
     val size: String,
     val price: Int,

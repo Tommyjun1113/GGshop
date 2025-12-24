@@ -39,7 +39,8 @@ class OrderDetailViewModel : ViewModel() {
                 items.value = orderItems
                 total.value = (doc.getLong("total") ?: 0).toInt()
                 discount.value = (doc.getLong("discount") ?: 0).toInt()
-                couponTitle.value = doc.getString("couponTitle")
+                val couponMap = doc.get("coupon") as? Map<*, *>
+                couponTitle.value = couponMap?.get("title") as? String
                 paymentMethod.value = doc.getString("paymentMethod") ?: ""
                 createdAt.value = doc.getLong("createdAt") ?: 0L
             }

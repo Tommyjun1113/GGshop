@@ -41,16 +41,11 @@ class HomeFragment : Fragment() {
         setupBanner(view)
         setupProductSections(view)
         setupSearch(view)
-
-
         return view
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        if (UserSession.isRecommendForCoupon && UserSession.needMoreAmount > 0) {
-            showCouponRecommend()
-        }
+        resetToHomeState()
     }
 
 
@@ -65,10 +60,8 @@ class HomeFragment : Fragment() {
             R.drawable.adidas
         )
 
-        val adapter = BannerAdapter(images)
-        bannerViewPager.adapter = adapter
+        bannerViewPager.adapter = BannerAdapter(images)
         dotsIndicator.attachTo(bannerViewPager)
-
         autoScroll()
     }
 
@@ -194,9 +187,9 @@ class HomeFragment : Fragment() {
 
         showHomeSections(true)
     }
-    private fun showCouponRecommend() {
-        val needMore = UserSession.needMoreAmount
+    private fun showCouponRecommend(needMore:Int) {
         if (needMore <= 0) return
+
         showHomeSections(false)
 
         rootView.findViewById<View>(R.id.bannerViewPager)?.visibility = View.GONE
@@ -206,6 +199,7 @@ class HomeFragment : Fragment() {
         rootView.findViewById<View>(R.id.section_title_3)?.visibility = View.GONE
 
         val recyclerSearch = rootView.findViewById<RecyclerView>(R.id.recycler_search_result)
+        recyclerSearch.layoutManager = GridLayoutManager(requireContext(), 2)
         recyclerSearch.visibility = View.VISIBLE
         recyclerSearch.isClickable = true
         recyclerSearch.isFocusable = true
@@ -219,7 +213,7 @@ class HomeFragment : Fragment() {
 
         if (recommendList.isEmpty()) return
         searchAdapter = ProductAdapter(
-            items = emptyList(),
+            items = recommendList,
             onItemClick = { product -> findNavController().navigate(HomeFragmentDirections.actionHomeToProductDetail(product))},
             onFavoriteClick = { product ->
                 product.isFavorite = !product.isFavorite
@@ -231,16 +225,16 @@ class HomeFragment : Fragment() {
             },
             onQuickAddCart = { product ->
                 quickAddToCart(product)
-            }
+            },
+            recommendNeedMore = needMore
         )
         recyclerSearch.adapter = searchAdapter
-        searchAdapter.updateList(recommendList)
+
         Toast.makeText(
             requireContext(),
             "🔥 再買 NT$$needMore 即可使用優惠",
             Toast.LENGTH_SHORT
         ).show()
-        UserSession.isRecommendForCoupon = true
     }
     private fun quickAddToCart(product: Product) {
         if (!UserSession.isLogin) {
@@ -285,8 +279,15 @@ class HomeFragment : Fragment() {
         main.hideProductActionBar()
         main.setFavoriteMenuVisible(true)
         main.clearSearch()
+
         if (UserSession.isRecommendForCoupon && UserSession.needMoreAmount > 0) {
-            showCouponRecommend()
+            val diff = UserSession.needMoreAmount
+
+            showCouponRecommend(diff)
+
+
+            UserSession.isRecommendForCoupon = false
+            UserSession.needMoreAmount = 0
         } else {
             resetToHomeState()
         }

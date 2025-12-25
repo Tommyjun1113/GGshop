@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:text="申請退貨"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#000"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:text="請填寫退貨原因，送出後需等待審核"
+        android:textSize="14sp"
+        android:textColor="#666"
+        android:layout_marginTop="6dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <EditText
+        android:id="@+id/edtReturnReason"
+        android:hint="例如：尺寸不合、商品瑕疵"
+        android:background="@drawable/bg_input"
+        android:padding="12dp"
+        android:layout_marginTop="12dp"
+        android:minHeight="80dp"
+        android:gravity="top"
+        android:inputType="textMultiLine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/btnCancel"
+            android:text="取消"
+            android:textColor="#666"
+            android:textSize="15sp"
+            android:padding="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/btnSubmit"
+            android:text="送出申請"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:padding="10dp"
+            android:background="@drawable/bg_primary_btn"
+            android:layout_marginStart="12dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+</LinearLayout>

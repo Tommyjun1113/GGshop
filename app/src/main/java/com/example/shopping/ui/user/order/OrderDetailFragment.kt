@@ -1,7 +1,11 @@
 package com.example.shopping.ui.user.order
 
+import android.app.AlertDialog
+import android.graphics.Color
 import android.os.Bundle
 import android.view.*
+import android.widget.EditText
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -50,6 +54,11 @@ class OrderDetailFragment : Fragment() {
             LinearLayoutManager(requireContext())
         observeViewModel()
         viewModel.loadOrderDetail(orderId)
+
+        binding.btnApplyReturn.setOnClickListener {
+            showReturnDialog()
+        }
+
     }
 
     private fun observeViewModel() {
@@ -76,7 +85,7 @@ class OrderDetailFragment : Fragment() {
             val iconRes = when (it) {
                 "信用卡" -> R.drawable.img_6
                 "貨到付款" -> R.drawable.img_7
-                "LINE Pay" -> R.drawable.img_8
+                "LINEPAY", "LINE Pay" -> R.drawable.img_8
                 else -> R.drawable.img_6
             }
             binding.imgPaymentIcon.setImageResource(iconRes)
@@ -87,6 +96,16 @@ class OrderDetailFragment : Fragment() {
                 java.text.SimpleDateFormat("yyyy-MM-dd HH:mm")
                     .format(java.util.Date(it))
         }
+        viewModel.orderStatus.observe(viewLifecycleOwner) {
+            updateOrderStatus(it)
+        }
+
+        viewModel.returnReason.observe(viewLifecycleOwner) {
+            if (!it.isNullOrBlank()) {
+                binding.txtReturnInfo.text = "退貨原因：$it"
+            }
+        }
+
     }
     private fun updateCouponInfo() {
         val discount = viewModel.discount.value ?: 0
@@ -99,6 +118,109 @@ class OrderDetailFragment : Fragment() {
         } else {
             binding.txtCouponInfo.visibility = View.GONE
         }
+    }
+    private fun updateOrderStatus(status: String) {
+        when (status) {
+
+            "PENDING" -> {
+                binding.txtOrderStatus.text = "訂單狀態：待付款 / 處理中"
+                binding.txtOrderStatus.setTextColor(Color.parseColor("#2d2e2d"))
+
+                binding.layoutReturn.visibility = View.VISIBLE
+                binding.btnApplyReturn.visibility = View.VISIBLE
+                binding.txtReturnInfo.visibility = View.GONE
+            }
+            "COMPLETED" -> {
+                binding.txtOrderStatus.text = "訂單狀態：已完成"
+                binding.txtOrderStatus.setTextColor(Color.parseColor("#27AE60"))
+
+                binding.layoutReturn.visibility = View.VISIBLE
+                binding.btnApplyReturn.visibility = View.VISIBLE
+                binding.txtReturnInfo.visibility = View.GONE
+            }
+
+            "RETURN_REQUESTED" -> {
+                binding.txtOrderStatus.text = "訂單狀態：退貨申請中"
+                binding.txtOrderStatus.setTextColor(Color.parseColor("#c7c183"))
+
+                binding.layoutReturn.visibility = View.VISIBLE
+                binding.btnApplyReturn.visibility = View.GONE
+                binding.txtReturnInfo.visibility = View.VISIBLE
+            }
+
+            "RETURN_APPROVED" -> {
+                binding.txtOrderStatus.text = "訂單狀態：退貨審核通過"
+                binding.txtOrderStatus.setTextColor(Color.parseColor("#ed7a6f"))
+
+                binding.layoutReturn.visibility = View.GONE
+            }
+
+            "RETURN_REJECTED" -> {
+                binding.txtOrderStatus.text = "訂單狀態：退貨被拒"
+                binding.txtOrderStatus.setTextColor(Color.RED)
+
+                binding.layoutReturn.visibility = View.GONE
+            }
+
+            "RETURN_COMPLETED" -> {
+                binding.txtOrderStatus.text = "訂單狀態：退貨完成"
+                binding.txtOrderStatus.setTextColor(Color.GRAY)
+
+                binding.layoutReturn.visibility = View.GONE
+            }
+        }
+    }
+    private fun showReturnDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_return, null)
+
+        val edtReason = dialogView.findViewById<EditText>(R.id.edtReturnReason)
+        val btnCancel = dialogView.findViewById<TextView>(R.id.btnCancel)
+        val btnSubmit = dialogView.findViewById<TextView>(R.id.btnSubmit)
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .create()
+
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        btnSubmit.setOnClickListener {
+            val reason = edtReason.text.toString().trim()
+            if (reason.isBlank()) {
+                edtReason.error = "請輸入退貨原因"
+                return@setOnClickListener
+            }
+            submitReturn(reason)
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun submitReturn(reason: String) {
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(UserSession.documentId)
+            .collection("orders")
+            .document(orderId)
+            .update(
+                mapOf(
+                    "status" to "RETURN_REQUESTED",
+                    "return" to mapOf(
+                        "reason" to reason,
+                        "note" to "",
+                        "createdAt" to System.currentTimeMillis()
+                    )
+                )
+            )
+            .addOnSuccessListener {
+                android.widget.Toast
+                    .makeText(requireContext(), "退貨申請已送出", android.widget.Toast.LENGTH_SHORT)
+                    .show()
+
+                viewModel.loadOrderDetail(orderId)
+            }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

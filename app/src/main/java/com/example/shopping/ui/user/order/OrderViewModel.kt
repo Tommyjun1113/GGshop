@@ -14,6 +14,9 @@ class OrderDetailViewModel : ViewModel() {
     val paymentMethod = MutableLiveData<String>()
     val createdAt = MutableLiveData<Long>()
 
+    val orderStatus = MutableLiveData<String>()
+    val returnReason = MutableLiveData<String?>()
+
     fun loadOrderDetail(orderId: String) {
         FirebaseFirestore.getInstance()
             .collection("users")
@@ -37,12 +40,19 @@ class OrderDetailViewModel : ViewModel() {
                     } ?: emptyList()
 
                 items.value = orderItems
+
                 total.value = (doc.getLong("total") ?: 0).toInt()
                 discount.value = (doc.getLong("discount") ?: 0).toInt()
+
                 val couponMap = doc.get("coupon") as? Map<*, *>
                 couponTitle.value = couponMap?.get("title") as? String
+
                 paymentMethod.value = doc.getString("paymentMethod") ?: ""
                 createdAt.value = doc.getLong("createdAt") ?: 0L
+
+                orderStatus.value = doc.getString("status") ?: "COMPLETED"
+                val returnMap = doc.get("return") as? Map<*, *>
+                returnReason.value = returnMap?.get("reason") as? String
             }
     }
 }
